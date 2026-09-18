@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - pip install -r requirements.txt
+  pre_build:
+    commands:
+      - echo "Running unit tests"
+      - pytest tests/ -v
+  build:
+    commands:
+      - echo "Upserting and starting the SageMaker training pipeline"
+      - python ml_pipeline/pipeline.py
+          --role-arn "$SAGEMAKER_EXECUTION_ROLE_ARN"
+          --artifacts-bucket "$ARTIFACTS_BUCKET"
+          --region "$AWS_REGION"
+          --upsert
+          --start
+artifacts:
+  files:
+    - '**/*'

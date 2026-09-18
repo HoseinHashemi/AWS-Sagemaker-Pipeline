@@ -1,0 +1,25 @@
+version: 0.2
+
+# Triggered by the "model package approved" EventBridge rule (after the
+# manual approval gate in the deploy CodePipeline). Deploys the latest
+# approved model package to the real-time endpoint, then (re)creates the
+# Model Monitor schedules against its baselines.
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - pip install -r requirements.txt
+  build:
+    commands:
+      - echo "Deploying latest approved model package to endpoint $ENDPOINT_NAME"
+      - python scripts/deploy_approved_model.py
+          --model-package-group-name "$MODEL_PACKAGE_GROUP_NAME"
+          --endpoint-name "$ENDPOINT_NAME"
+          --role-arn "$SAGEMAKER_EXECUTION_ROLE_ARN"
+      - echo "Creating/updating Model Monitor schedules"
+      - python scripts/setup_model_monitor.py
+          --endpoint-name "$ENDPOINT_NAME"
+          --role-arn "$SAGEMAKER_EXECUTION_ROLE_ARN"
+          --baseline-s3-uri "$BASELINE_S3_URI"
